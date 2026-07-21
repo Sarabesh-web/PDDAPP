@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.smartplannerapp.data.DataRepository
 import com.example.smartplannerapp.data.ScheduleItem
+import com.example.smartplannerapp.data.isCompleted
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,7 +61,7 @@ fun PlannerScreen(
                     showAddDialog = true
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Session")
             }
@@ -83,7 +84,7 @@ fun PlannerScreen(
             Text(
                 text = "Organize your study sessions throughout the week.",
                 fontSize = 13.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
             )
 
@@ -98,11 +99,11 @@ fun PlannerScreen(
                         onClick = { selectedDay = day },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(day.substring(0, 3))
+                        Text(day.substring(0, 3), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -115,7 +116,7 @@ fun PlannerScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "No study sessions scheduled for today.", color = Color.Gray)
+                    Text(text = "No study sessions scheduled for today.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyColumn(
@@ -147,8 +148,8 @@ fun PlannerScreen(
                         label = { Text("Session Title") },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    
-                    Text("Subject", fontSize = 12.sp, color = Color.Gray)
+
+                    Text("Subject", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     // Dropdown simulation with buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -160,7 +161,7 @@ fun PlannerScreen(
                                 onClick = { newSubject = sub.name },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                                    contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
                                 modifier = Modifier.weight(1f),
                                 contentPadding = PaddingValues(vertical = 4.dp, horizontal = 2.dp)
@@ -183,7 +184,7 @@ fun PlannerScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Text("Priority", fontSize = 12.sp, color = Color.Gray)
+                    Text("Priority", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -194,7 +195,7 @@ fun PlannerScreen(
                                 onClick = { newPriority = prio },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                                    contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -267,28 +268,28 @@ fun ScheduleItemRow(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         textDecoration = if (item.isCompleted) TextDecoration.LineThrough else null,
-                        color = if (item.isCompleted) Color.Gray else MaterialTheme.colorScheme.onSurface
+                        color = if (item.isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "${item.startTime} - ${item.endTime} • ${item.subjectName}",
                         fontSize = 12.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }
             }
-            
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Badge(
                     containerColor = when (item.priority) {
-                        "high" -> Color(0xFFFEE2E2)
+                        "high" -> MaterialTheme.colorScheme.errorContainer
                         "medium" -> Color(0xFFFEF3C7)
-                        else -> Color(0xFFD1FAE5)
+                        else -> MaterialTheme.colorScheme.primaryContainer
                     },
                     contentColor = when (item.priority) {
-                        "high" -> Color(0xFFB91C1C)
+                        "high" -> MaterialTheme.colorScheme.onErrorContainer
                         "medium" -> Color(0xFFB45309)
-                        else -> Color(0xFF047857)
+                        else -> MaterialTheme.colorScheme.onPrimaryContainer
                     }
                 ) {
                     Text(
@@ -303,7 +304,7 @@ fun ScheduleItemRow(
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete Schedule",
-                        tint = Color.Gray
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

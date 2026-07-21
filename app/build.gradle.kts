@@ -88,4 +88,7 @@ dependencies {
   implementation(libs.okhttp.logging)
   implementation(libs.retrofit.serialization)
   implementation(libs.kotlinx.serialization.json)
+
+  // Security Crypto
+  implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }

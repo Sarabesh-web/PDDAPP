@@ -1,7 +1,6 @@
 package com.example.smartplannerapp.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,7 +31,7 @@ fun TasksScreen(
     modifier: Modifier = Modifier
 ) {
     val tasks by repository.tasks.collectAsState()
-    
+
     var searchQuery by remember { mutableStateOf("") }
     var filterSelected by remember { mutableStateOf("all") } // all, pending, completed
     var showAddDialog by remember { mutableStateOf(false) }
@@ -45,7 +44,7 @@ fun TasksScreen(
     var newDueDate by remember { mutableStateOf("") }
 
     val filteredTasks = tasks.filter { task ->
-        val matchesSearch = task.title.contains(searchQuery, ignoreCase = true) || 
+        val matchesSearch = task.title.contains(searchQuery, ignoreCase = true) ||
                             task.description.contains(searchQuery, ignoreCase = true)
         val matchesFilter = when (filterSelected) {
             "pending" -> task.status == "pending"
@@ -58,16 +57,16 @@ fun TasksScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { 
+                onClick = {
                     newTitle = ""
                     newDesc = ""
                     newSubject = "General"
                     newPriority = "medium"
                     newDueDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                    showAddDialog = true 
+                    showAddDialog = true
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Task")
             }
@@ -90,7 +89,7 @@ fun TasksScreen(
             Text(
                 text = "Track your assignments, homework, and exams.",
                 fontSize = 13.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
             )
 
@@ -122,12 +121,12 @@ fun TasksScreen(
                         onClick = { filterSelected = filter },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(text = label, fontSize = 12.sp)
+                        Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -140,7 +139,7 @@ fun TasksScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "No tasks found.", color = Color.Gray)
+                    Text(text = "No tasks found.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyColumn(
@@ -190,8 +189,8 @@ fun TasksScreen(
                         label = { Text("Due Date (YYYY-MM-DD)") },
                         modifier = Modifier.fillMaxWidth()
                     )
-                    
-                    Text("Priority", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(top = 4.dp))
+
+                    Text("Priority", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -202,7 +201,7 @@ fun TasksScreen(
                                 onClick = { newPriority = prio },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-                                    contentColor = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -276,36 +275,36 @@ fun TaskItem(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
-                        color = if (isCompleted) Color.Gray else MaterialTheme.colorScheme.onSurface
+                        color = if (isCompleted) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                     )
                     if (task.description.isNotBlank()) {
                         Text(
                             text = task.description,
                             fontSize = 12.sp,
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 2.dp)
                         )
                     }
                     Text(
                         text = "${task.subject} • Due ${task.dueDate}",
                         fontSize = 11.sp,
-                        color = Color.LightGray,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }
-            
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Badge(
                     containerColor = when (task.priority) {
-                        "high" -> Color(0xFFFEE2E2)
+                        "high" -> MaterialTheme.colorScheme.errorContainer
                         "medium" -> Color(0xFFFEF3C7)
-                        else -> Color(0xFFD1FAE5)
+                        else -> MaterialTheme.colorScheme.primaryContainer
                     },
                     contentColor = when (task.priority) {
-                        "high" -> Color(0xFFB91C1C)
+                        "high" -> MaterialTheme.colorScheme.onErrorContainer
                         "medium" -> Color(0xFFB45309)
-                        else -> Color(0xFF047857)
+                        else -> MaterialTheme.colorScheme.onPrimaryContainer
                     }
                 ) {
                     Text(
@@ -320,7 +319,7 @@ fun TaskItem(
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete",
-                        tint = Color.Gray
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

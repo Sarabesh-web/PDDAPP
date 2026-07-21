@@ -30,7 +30,7 @@ fun NotesScreen(
     modifier: Modifier = Modifier
 ) {
     val notes by repository.notes.collectAsState()
-    
+
     var searchQuery by remember { mutableStateOf("") }
     var selectedNote by remember { mutableStateOf<Note?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -40,21 +40,21 @@ fun NotesScreen(
     var newSubject by remember { mutableStateOf("") }
 
     val filteredNotes = notes.filter { note ->
-        note.title.contains(searchQuery, ignoreCase = true) || 
+        note.title.contains(searchQuery, ignoreCase = true) ||
         note.content.contains(searchQuery, ignoreCase = true)
     }
 
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { 
+                onClick = {
                     newTitle = ""
                     newContent = ""
                     newSubject = "General"
-                    showAddDialog = true 
+                    showAddDialog = true
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Note")
             }
@@ -69,7 +69,7 @@ fun NotesScreen(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Notes & Lecture Slides",
+                text = "Notes & Lecture Summaries",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -77,7 +77,7 @@ fun NotesScreen(
             Text(
                 text = "Store formulas, outlines, summaries, and revision cards.",
                 fontSize = 13.sp,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
             )
 
@@ -99,7 +99,7 @@ fun NotesScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = "No notes found.", color = Color.Gray)
+                    Text(text = "No notes found.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 LazyVerticalGrid(
@@ -129,8 +129,8 @@ fun NotesScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Subject: ${note.subject}", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
-                    Text("Last modified: ${note.date}", fontSize = 10.sp, color = Color.Gray)
-                    Divider(modifier = Modifier.padding(vertical = 4.dp))
+                    Text("Last modified: ${note.date}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     Text(note.content, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
             },
@@ -238,7 +238,7 @@ fun NoteGridItem(
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = "Delete Note",
-                            tint = Color.Gray,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -256,7 +256,7 @@ fun NoteGridItem(
                 Text(
                     text = note.content,
                     fontSize = 12.sp,
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -264,7 +264,7 @@ fun NoteGridItem(
             Text(
                 text = note.date,
                 fontSize = 10.sp,
-                color = Color.LightGray
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }
     }

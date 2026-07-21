@@ -66,7 +66,7 @@ class DataRepository(context: Context) {
                 if (response.isSuccessful) {
                     val auth = response.body()
                     if (auth != null) {
-                        sessionManager.saveSession(auth.token, auth.user.name, auth.user.email)
+                        sessionManager.saveSession(auth.token, auth.user.name, auth.user.email, auth.user.role)
                         rebuildService()
                         refreshData()
                         null // Success
@@ -80,14 +80,14 @@ class DataRepository(context: Context) {
         }
     }
 
-    suspend fun signup(email: String, password: String, name: String): String? {
+    suspend fun signup(email: String, password: String, name: String, role: String = "student"): String? {
         return withContext(Dispatchers.IO) {
             try {
-                val response = apiService.signup(SignupRequest(email, password, name))
+                val response = apiService.signup(SignupRequest(email, password, name, role))
                 if (response.isSuccessful) {
                     val auth = response.body()
                     if (auth != null) {
-                        sessionManager.saveSession(auth.token, auth.user.name, auth.user.email)
+                        sessionManager.saveSession(auth.token, auth.user.name, auth.user.email, auth.user.role)
                         rebuildService()
                         refreshData()
                         null // Success
@@ -285,5 +285,59 @@ class DataRepository(context: Context) {
 
     fun updateSettings(newSettings: AppSettings) {
         _settings.value = newSettings
+        scope.launch {
+            try {
+                apiService.updateProfile(
+                    ProfileUpdateRequest(
+                        theme = newSettings.theme,
+                        notifications = if (newSettings.notifications) "true" else "false"
+                    )
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    suspend fun updateProfile(name: String?, bio: String?, university: String?, major: String?, year: String?, theme: String? = null, notifications: String? = null): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val activeTheme = theme ?: _settings.value.theme
+                val response = apiService.updateProfile(ProfileUpdateRequest(name, bio, university, major, year, activeTheme, notifications))
+                if (response.isSuccessful) {
+                    refreshData()
+                    null
+                } else {
+                    response.errorBody()?.string() ?: "Update failed"
+                }
+            } catch (e: Exception) {
+                e.message ?: "Network error"
+            }
+        }
+    }
+
+    suspend fun logStudySession(subjectName: String, durationMinutes: Int, title: String = ""): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.logStudySession(LogStudySessionRequest(subjectName, durationMinutes, title))
+                if (response.isSuccessful) {
+                    refreshData()
+                    true
+                } else false
+            } catch (e: Exception) {
+                false
+            }
+        }
+    }
+
+    suspend fun getAdminProgress(): List<StudentProgress>? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getAdminProgress()
+                if (response.isSuccessful) response.body() else null
+            } catch (e: Exception) {
+                null
+            }
+        }
     }
 }

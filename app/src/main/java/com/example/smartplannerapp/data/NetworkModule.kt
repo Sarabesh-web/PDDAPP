@@ -2,6 +2,8 @@ package com.example.smartplannerapp.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 import kotlinx.serialization.Serializable
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -13,21 +15,30 @@ import retrofit2.Response
 import retrofit2.http.*
 
 class SessionManager(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("smart_planner_session", Context.MODE_PRIVATE)
+    private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+    private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
+        "smart_planner_secure_session",
+        masterKeyAlias,
+        context,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
 
     companion object {
         private const val KEY_TOKEN = "auth_token"
         private const val KEY_USER_NAME = "user_name"
         private const val KEY_USER_EMAIL = "user_email"
+        private const val KEY_USER_ROLE = "user_role"
         private const val KEY_BASE_URL = "api_base_url"
-        const val DEFAULT_BASE_URL = "http://10.0.2.2:3001" // Android Emulator default base URL
+        const val DEFAULT_BASE_URL = "http://192.168.1.33:3001" // PC local IP address on Wi-Fi
     }
 
-    fun saveSession(token: String, name: String, email: String) {
+    fun saveSession(token: String, name: String, email: String, role: String = "student") {
         prefs.edit().apply {
             putString(KEY_TOKEN, token)
             putString(KEY_USER_NAME, name)
             putString(KEY_USER_EMAIL, email)
+            putString(KEY_USER_ROLE, role)
             apply()
         }
     }
@@ -37,6 +48,7 @@ class SessionManager(context: Context) {
             remove(KEY_TOKEN)
             remove(KEY_USER_NAME)
             remove(KEY_USER_EMAIL)
+            remove(KEY_USER_ROLE)
             apply()
         }
     }
@@ -44,6 +56,7 @@ class SessionManager(context: Context) {
     fun getToken(): String? = prefs.getString(KEY_TOKEN, null)
     fun getUserName(): String = prefs.getString(KEY_USER_NAME, "") ?: ""
     fun getUserEmail(): String = prefs.getString(KEY_USER_EMAIL, "") ?: ""
+    fun getUserRole(): String = prefs.getString(KEY_USER_ROLE, "student") ?: "student"
 
     fun getBaseUrl(): String = prefs.getString(KEY_BASE_URL, DEFAULT_BASE_URL) ?: DEFAULT_BASE_URL
     fun saveBaseUrl(url: String) {
@@ -61,7 +74,8 @@ data class LoginRequest(
 data class SignupRequest(
     val email: String,
     val password: String,
-    val name: String
+    val name: String,
+    val role: String = "student"
 )
 
 @Serializable
@@ -69,6 +83,7 @@ data class UserResponse(
     val id: String = "",
     val email: String,
     val name: String,
+    val role: String = "student",
     val avatar: String = ""
 )
 
@@ -94,6 +109,44 @@ data class MeResponse(
     val profile: ProfileResponse
 )
 
+@Serializable
+data class ProfileUpdateRequest(
+    val name: String? = null,
+    val bio: String? = null,
+    val university: String? = null,
+    val major: String? = null,
+    val year: String? = null,
+    val theme: String? = null,
+    val notifications: String? = null
+)
+
+@Serializable
+data class ProfileUpdateResponse(
+    val profile: ProfileResponse
+)
+
+@Serializable
+data class StudentProgress(
+    val id: String = "",
+    val name: String,
+    val email: String,
+    val major: String = "",
+    val university: String = "",
+    val bio: String = "",
+    val completedTasks: Int = 0,
+    val totalTasks: Int = 0,
+    val studyHours: Double = 0.0,
+    val attendanceRate: Int = 100,
+    val streak: Int = 0
+)
+
+@Serializable
+data class LogStudySessionRequest(
+    val subjectName: String,
+    val durationMinutes: Int,
+    val title: String = ""
+)
+
 interface ApiService {
     @POST("/api/auth/login")
     suspend fun login(@Body body: LoginRequest): Response<AuthResponse>
@@ -103,6 +156,15 @@ interface ApiService {
 
     @GET("/api/auth/me")
     suspend fun getMe(): Response<MeResponse>
+
+    @PUT("/api/auth/profile")
+    suspend fun updateProfile(@Body body: ProfileUpdateRequest): Response<ProfileUpdateResponse>
+
+    @GET("/api/data/admin/progress")
+    suspend fun getAdminProgress(): Response<List<StudentProgress>>
+
+    @POST("/api/data/schedules/log")
+    suspend fun logStudySession(@Body body: LogStudySessionRequest): Response<ScheduleItem>
 
     @GET("/api/data/subjects")
     suspend fun getSubjects(): Response<List<Subject>>

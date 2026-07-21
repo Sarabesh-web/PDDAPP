@@ -19,7 +19,8 @@ data class Task(
     val subject: String = "General",
     val priority: String = "medium", // low, medium, high
     val status: String = "pending",   // pending, completed
-    val dueDate: String = ""
+    val dueDate: String = "",
+    val completedAt: String = ""
 )
 
 @Serializable
@@ -40,7 +41,8 @@ data class ScheduleItem(
     val day: String,
     val priority: String = "medium", // low, medium, high
     val completed: String = "false", // Mongoose schema has completed as String ('true'/'false')
-    val subjectId: String = ""
+    val subjectId: String = "",
+    val subjectName: String = ""
 )
 
 @Serializable
@@ -52,3 +54,7 @@ data class AppSettings(
     val dailyGoalReminder: Boolean = true,
     val fontSize: String = "medium"
 )
+
+val ScheduleItem.isCompleted: Boolean
+    get() = completed == "true"
+

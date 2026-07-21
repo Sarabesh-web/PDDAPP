@@ -11,9 +11,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.smartplannerapp.data.DataRepository
+import com.example.smartplannerapp.data.isCompleted
+import java.util.Locale
 
 @Composable
 fun AnalyticsScreen(
@@ -23,10 +26,42 @@ fun AnalyticsScreen(
     val tasks by repository.tasks.collectAsState()
     val schedules by repository.schedules.collectAsState()
 
-    val totalStudyHours = schedules.filter { it.isCompleted }.sumOf { 1.5 }
+    // Calculate study hours dynamically
+    var totalStudyHours = 0.0
+    val subjectHoursMap = mutableMapOf<String, Double>()
+
+    schedules.filter { it.isCompleted }.forEach { item ->
+        val subjectName = item.subjectName.ifBlank { "General" }
+        val startParts = item.startTime.split(":")
+        val endParts = item.endTime.split(":")
+        if (startParts.size >= 2 && endParts.size >= 2) {
+            val startH = startParts[0].toIntOrNull() ?: 0
+            val startM = startParts[1].toIntOrNull() ?: 0
+            val endH = endParts[0].toIntOrNull() ?: 0
+            val endM = endParts[1].toIntOrNull() ?: 0
+            val duration = (endH * 60 + endM) - (startH * 60 + startM)
+            if (duration > 0) {
+                val hrs = duration.toDouble() / 60.0
+                totalStudyHours += hrs
+                subjectHoursMap[subjectName] = (subjectHoursMap[subjectName] ?: 0.0) + hrs
+            }
+        }
+    }
+
     val completedTasks = tasks.count { it.status == "completed" }
     val totalTasks = tasks.size
     val completionRate = if (totalTasks > 0) (completedTasks * 100 / totalTasks) else 0
+
+    // Dynamic Productivity Grade
+    val productivityGrade = when {
+        completionRate >= 90 -> "A+"
+        completionRate >= 80 -> "A"
+        completionRate >= 75 -> "A-"
+        completionRate >= 65 -> "B+"
+        completionRate >= 50 -> "B"
+        completionRate >= 35 -> "C"
+        else -> "D"
+    }
 
     LazyColumn(
         modifier = modifier
@@ -45,8 +80,8 @@ fun AnalyticsScreen(
             Text(
                 text = "Track and analyze your study habits over time.",
                 fontSize = 13.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
             )
         }
 
@@ -65,12 +100,12 @@ fun AnalyticsScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    
-                    MetricRow(label = "Total Study Hours", value = "${totalStudyHours}h", color = Color(0xFF3B82F6))
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
-                    MetricRow(label = "Task Completion Rate", value = "$completionRate%", color = Color(0xFF10B981))
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
-                    MetricRow(label = "Productivity Grade", value = "A-", color = Color(0xFF8B5CF6))
+
+                    MetricRow(label = "Total Study Hours", value = String.format(Locale.US, "%.1fh", totalStudyHours), color = MaterialTheme.colorScheme.primary)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    MetricRow(label = "Task Completion Rate", value = "$completionRate%", color = MaterialTheme.colorScheme.tertiary)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    MetricRow(label = "Productivity Grade", value = productivityGrade, color = MaterialTheme.colorScheme.secondary)
                 }
             }
         }
@@ -91,10 +126,34 @@ fun AnalyticsScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    SubjectProgressItem(name = "Mathematics", fraction = 0.45f, color = Color(0xFF6366F1), hours = "5.5h")
-                    SubjectProgressItem(name = "Physics", fraction = 0.25f, color = Color(0xFF3B82F6), hours = "3.0h")
-                    SubjectProgressItem(name = "Computer Science", fraction = 0.20f, color = Color(0xFF8B5CF6), hours = "2.5h")
-                    SubjectProgressItem(name = "English Literature", fraction = 0.10f, color = Color(0xFFEC4899), hours = "1.0h")
+                    if (subjectHoursMap.isEmpty()) {
+                        Text(
+                            text = "No study logs recorded yet. Complete focus slots or planner items to log study hours.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontStyle = FontStyle.Italic,
+                            modifier = Modifier.padding(vertical = 12.dp)
+                        )
+                    } else {
+                        val maxHours = subjectHoursMap.values.maxOrNull() ?: 1.0
+                        val colors = listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.secondary,
+                            MaterialTheme.colorScheme.tertiary,
+                            MaterialTheme.colorScheme.error
+                        )
+
+                        subjectHoursMap.entries.sortedByDescending { it.value }.forEachIndexed { index, entry ->
+                            val color = colors[index % colors.size]
+                            val fraction = (entry.value / maxHours).toFloat()
+                            SubjectProgressItem(
+                                name = entry.key,
+                                fraction = fraction,
+                                color = color,
+                                hours = String.format(Locale.US, "%.1fh", entry.value)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -114,8 +173,16 @@ fun AnalyticsScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(6.dp))
+
+                    val insightMessage = if (totalStudyHours > 0) {
+                        val topSubject = subjectHoursMap.entries.maxByOrNull { it.value }?.key ?: "your subjects"
+                        "Excellent job! You are focusing heavily on $topSubject. Remember to balance your schedule and take regular breaks to optimize long-term cognitive absorption."
+                    } else {
+                        "No data yet. Set a 25-minute Pomodoro timer or schedule study slots to train the AetherFlow planning engine."
+                    }
+
                     Text(
-                        text = "You are most active in the mornings. Harder subjects like Calculus should be studied before 11 AM to optimize absorption.",
+                        text = insightMessage,
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -132,7 +199,7 @@ fun MetricRow(label: String, value: String, color: Color) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, fontSize = 14.sp, color = Color.Gray)
+        Text(text = label, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(text = value, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = color)
     }
 }
@@ -145,8 +212,8 @@ fun SubjectProgressItem(name: String, fraction: Float, color: Color, hours: Stri
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = name, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-            Text(text = hours, fontSize = 11.sp, color = Color.Gray)
+            Text(text = name, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+            Text(text = hours, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(modifier = Modifier.height(4.dp))
         LinearProgressIndicator(
@@ -155,9 +222,8 @@ fun SubjectProgressItem(name: String, fraction: Float, color: Color, hours: Stri
                 .fillMaxWidth()
                 .height(6.dp),
             color = color,
-            trackColor = Color.Gray.copy(alpha = 0.2f),
+            trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
             strokeCap = StrokeCap.Round
         )
     }
 }
-

@@ -2,11 +2,14 @@ package com.example.smartplannerapp.ui.main
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
 import com.example.smartplannerapp.data.DataRepository
 import com.example.smartplannerapp.ui.screens.*
@@ -14,11 +17,12 @@ import com.example.smartplannerapp.ui.screens.*
 enum class AppTab(val title: String, val icon: ImageVector) {
     DASHBOARD("Home", Icons.Default.Home),
     PLANNER("Planner", Icons.Default.DateRange),
-    TASKS("Tasks", Icons.Default.List),
+    TASKS("Tasks", Icons.AutoMirrored.Filled.List),
     POMODORO("Focus", Icons.Default.PlayArrow),
     NOTES("Notes", Icons.Default.Edit),
     ANALYTICS("Stats", Icons.Default.Info),
-    SETTINGS("Settings", Icons.Default.Settings)
+    SETTINGS("Settings", Icons.Default.Settings),
+    ADMIN("Admin", Icons.Default.Lock)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,15 +47,43 @@ fun MainScreen(
     } else {
         var currentTab by remember { mutableStateOf(AppTab.DASHBOARD) }
 
+        // Primary 5 tabs for bottom navigation bar to avoid crowding/text wrapping
+        val bottomNavTabs = listOf(
+            AppTab.DASHBOARD,
+            AppTab.PLANNER,
+            AppTab.TASKS,
+            AppTab.POMODORO,
+            AppTab.NOTES
+        )
+
         Scaffold(
+            modifier = modifier,
             bottomBar = {
-                NavigationBar {
-                    AppTab.values().forEach { tab ->
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    bottomNavTabs.forEach { tab ->
+                        val selected = (currentTab == tab)
                         NavigationBarItem(
-                            selected = currentTab == tab,
+                            selected = selected,
                             onClick = { currentTab = tab },
                             icon = { Icon(tab.icon, contentDescription = tab.title) },
-                            label = { Text(tab.title) }
+                            label = {
+                                Text(
+                                    text = tab.title,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = 11.sp
+                                )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
                     }
                 }
@@ -63,6 +95,9 @@ fun MainScreen(
                 AppTab.DASHBOARD -> DashboardScreen(
                     repository = activeRepository,
                     onNavigateToTasks = { currentTab = AppTab.TASKS },
+                    onNavigateToStats = { currentTab = AppTab.ANALYTICS },
+                    onNavigateToSettings = { currentTab = AppTab.SETTINGS },
+                    onNavigateToAdmin = { currentTab = AppTab.ADMIN },
                     modifier = screenModifier
                 )
                 AppTab.PLANNER -> PlannerScreen(
@@ -91,6 +126,10 @@ fun MainScreen(
                         activeRepository.logout()
                         isLoggedIn = false
                     },
+                    modifier = screenModifier
+                )
+                AppTab.ADMIN -> AdminScreen(
+                    repository = activeRepository,
                     modifier = screenModifier
                 )
             }
